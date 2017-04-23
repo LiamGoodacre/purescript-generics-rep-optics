@@ -6,7 +6,7 @@ import Control.Monad.Eff.Console (CONSOLE, log)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Optic (ctor, ctorArgs, _0, _1)
 import Type.Data.Symbol (SProxy(..))
-import Data.Lens (over, view, preview, Lens', Traversal', to)
+import Data.Lens (over, view, preview, Lens', Traversal', to, Iso', Prism')
 import Data.Maybe (Maybe(..))
 import Test.Assert (ASSERT, assert)
 import Data.Array (singleton)
@@ -15,14 +15,17 @@ import Data.Array (singleton)
 data I = I String
 derive instance genericI :: Generic I _
 derive instance eqI :: Eq I
-_I = SProxy :: SProxy "I"
+_I :: Iso' I String
+_I = ctor (SProxy :: SProxy "I")
 
 -- multiple constructors, single argument
 data E = A Int | B Boolean
 derive instance genericE :: Generic E _
 derive instance eqE :: Eq E
-_A = SProxy :: SProxy "A"
-_B = SProxy :: SProxy "B"
+_A :: Prism' E Int
+_A = ctor (SProxy :: SProxy "A")
+_B :: Prism' E Boolean
+_B = ctor (SProxy :: SProxy "B")
 
 -- product structure
 data P = P Int String
@@ -65,7 +68,8 @@ _N_1 = ctorArgs _N _1
 -- open rows act like regular arguments
 data OR r = OR (Record (a :: Int | r))
 derive instance genericOR :: Generic (OR r) _
-_OR = SProxy :: SProxy "OR"
+_OR :: forall r. Iso' (OR r) (Record (a :: Int | r))
+_OR = ctor (SProxy :: SProxy "OR")
 
 -- multiple constructors, multiple arguments
 data ME = MA Int String | MB { a :: Int, b :: String }
@@ -83,23 +87,23 @@ _MB_b = ctorArgs _MB _b
 
 main :: Eff (console :: CONSOLE, assert :: ASSERT) Unit
 main = do
-  log "I _I" *> do
-    assert $ I "Hi!" == over (ctor _I) (_ <> "!") (I "Hi")
-    assert $ "Hi" == view (ctor _I) (I "Hi")
+  log "I" *> do
+    assert $ I "Hi!" == over _I (_ <> "!") (I "Hi")
+    assert $ "Hi"    == view _I (I "Hi")
 
   log "E _A" *> do
-    let f = over (ctor _A) (10 * _)
+    let f = over _A (10 * _)
     assert $ A 420  == f (A 42)
     assert $ B true == f (B true)
-    assert $ Just 42 == preview (ctor _A) (A 42)
-    assert $ Nothing == preview (ctor _A) (B true)
+    assert $ Just 42 == preview _A (A 42)
+    assert $ Nothing == preview _A (B true)
 
   log "E _B" *> do
-    let f = over (ctor _B) not
+    let f = over _B not
     assert $ A 42    == f (A 42)
     assert $ B false == f (B true)
-    assert $ Nothing   == preview (ctor _B) (A 42)
-    assert $ Just true == preview (ctor _B) (B true)
+    assert $ Nothing   == preview _B (A 42)
+    assert $ Just true == preview _B (B true)
 
   log "P" *> do
     assert $ 42   == view _P_0 (P 42 "Hi")
@@ -121,7 +125,7 @@ main = do
     assert $ "B" == view (_N_1 <<< _G_1) n
 
   log "OR" *> do
-    assert $ 42 == (view (ctor _OR) (OR {a: 42})).a
+    assert $ 42 == (view _OR (OR {a: 42})).a
 
   log "ME" *> do
     let ma = MA 42 "Hi"
