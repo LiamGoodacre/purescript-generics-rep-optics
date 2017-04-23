@@ -66,9 +66,9 @@ _N_1 :: Lens' N (G String)
 _N_1 = ctorArgs _N _1
 
 -- open rows act like regular arguments
-data OR r = OR (Record (a :: Int | r))
+data OR r = OR {a :: Int | r}
 derive instance genericOR :: Generic (OR r) _
-_OR :: forall r. Iso' (OR r) (Record (a :: Int | r))
+_OR :: forall r. Iso' (OR r) {a :: Int | r}
 _OR = ctor (SProxy :: SProxy "OR")
 
 -- multiple constructors, multiple arguments
