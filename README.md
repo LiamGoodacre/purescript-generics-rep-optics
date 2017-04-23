@@ -20,6 +20,8 @@ ctor _L :: Prism' E Int
 ctor _R :: Prism' E Boolean
 ```
 
+Check out [test/Main](test/Main.purs) for more examples.
+
 ## Installation
 
 ```
