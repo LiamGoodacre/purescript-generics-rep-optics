@@ -166,8 +166,8 @@ instance argsRec
   => Args fd (Rec r) o p where
   gArgs fd = iso (\(Rec r) -> r) Rec <<< gArgsRec fd
 
-data Z = Z
-data S n = S n
+foreign import data Z :: Type
+foreign import data S :: Type -> Type
 
 class NatKey (n :: Type) (s :: Symbol) | n -> s, s -> n
 instance natKey0 :: NatKey Z "value0"
