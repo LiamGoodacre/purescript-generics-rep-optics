@@ -1,0 +1,29 @@
+{
+  "name": "purescript-generics-rep-optics",
+  "homepage": "https://github.com/LiamGoodacre/purescript-generics-rep-optics",
+  "description": "Optics for generics rep",
+  "author": "Liam Goodacre",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/LiamGoodacre/purescript-generics-rep-optics.git"
+  },
+  "ignore": [
+    "**/.*",
+    "bower_components",
+    "node_modules",
+    "output",
+    "test",
+    "bower.json",
+    "package.json"
+  ],
+  "dependencies": {
+    "purescript-generics-rep": "^5.0.0",
+    "purescript-profunctor-lenses": "^3.2.0",
+    "purescript-typelevel-prelude": "^2.0.0"
+  },
+  "devDependencies": {
+    "purescript-assert": "^3.0.0",
+    "purescript-console": "^3.0.0"
+  }
+}
