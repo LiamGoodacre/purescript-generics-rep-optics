@@ -2,7 +2,7 @@
 
 [![Build status](https://travis-ci.org/LiamGoodacre/purescript-generics-rep-optics.svg?branch=master)](https://travis-ci.org/LiamGoodacre/purescript-generics-rep-optics)
 
-Optics for generics rep.
+Generating optics for generic data types.
 
 Check out [test/Main](test/Main.purs) for examples.
 
