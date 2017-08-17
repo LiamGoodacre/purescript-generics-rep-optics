@@ -8,6 +8,9 @@ module Data.Generic.Rep.Optic
   , _4
   , _5
   , _6
+  , _7
+  , _8
+  , _9
   ) where
 
 import Data.Generic.Rep.Optic.Internal

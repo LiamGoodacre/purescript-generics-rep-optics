@@ -23,8 +23,9 @@ module Data.Generic.Rep.Optic.Internal
 import Data.Generic.Rep
 import Prelude ((<<<))
 import Data.Lens (Iso, iso, Prism, prism, Lens, lens)
-import Type.Data.Symbol (SProxy, class CompareSymbol)
-import Type.Data.Ordering (OProxy(..), EQ, LT, GT, kind Ordering)
+import Type.Data.Symbol (SProxy)
+import Type.Data.Symbol (class Equals) as Symbol
+import Type.Data.Boolean (BProxy(..), kind Boolean, True, False)
 import Type.Proxy (Proxy(..))
 import Data.Profunctor (class Profunctor)
 import Data.Profunctor.Strong (class Strong)
@@ -79,39 +80,34 @@ instance ctorCtor
   gCtor' _ = iCtor
 
 -- | Dispatch on equal symbols
-class CtorSum (ord :: Ordering)
+class CtorSum (bool :: Boolean)
               (ct :: Symbol)
               (rep :: Type)
               (out :: Type)
               (p :: Type -> Type -> Type)
-              | ord -> ct rep out p where
-  gCtorSum :: OProxy ord ->
+              | bool -> ct rep out p where
+  gCtorSum :: BProxy bool ->
               SProxy ct ->
               p out out ->
               p rep rep
-instance ctorSumEQ
+instance ctorSumTrue
   :: Choice p
-  => CtorSum EQ ct (Sum (Constructor ct arg) rest) arg p where
+  => CtorSum True ct (Sum (Constructor ct arg) rest) arg p where
   gCtorSum _ _ = gInl <<< iCtor
-instance ctorSumLT
+instance ctorSumFalse
   :: ( Choice p
      , Ctor ct rest out p )
-  => CtorSum LT ct (Sum lhs rest) out p where
-  gCtorSum _ ct = gInr <<< gCtor' ct
-instance ctorSumGT
-  :: ( Choice p
-     , Ctor ct rest out p )
-  => CtorSum GT ct (Sum lhs rest) out p where
+  => CtorSum False ct (Sum lhs rest) out p where
   gCtorSum _ ct = gInr <<< gCtor' ct
 
 -- | Rep has multiple ctors
 instance ctorSum
   :: ( Choice p
-     , CompareSymbol ct cur ord
-     , CtorSum ord ct (Sum (Constructor cur arg) rest) out p
+     , Symbol.Equals ct cur bool
+     , CtorSum bool ct (Sum (Constructor cur arg) rest) out p
      )
   => Ctor ct (Sum (Constructor cur arg) rest) out p where
-  gCtor' ct = gCtorSum (OProxy :: OProxy ord) ct
+  gCtor' ct = gCtorSum (BProxy :: BProxy bool) ct
 
 class Args (fd :: Symbol)
            (rep :: Type)
@@ -183,12 +179,12 @@ instance argsRecBase
   gArgsRec _ = iField
 instance argsRecStep
   :: ( Strong p
-     , CompareSymbol fd lfd ord
-     , ArgsRecCheck ord fd (Product (Field lfd lty) r) lfd lty r out p )
+     , Symbol.Equals fd lfd bool
+     , ArgsRecCheck bool fd (Product (Field lfd lty) r) lfd lty r out p )
   => ArgsRec fd (Product (Field lfd lty) r) out p where
-  gArgsRec = gArgsRecCheck (OProxy :: OProxy ord)
+  gArgsRec = gArgsRecCheck (BProxy :: BProxy bool)
 
-class ArgsRecCheck (ord :: Ordering)
+class ArgsRecCheck (bool :: Boolean)
                    (fd :: Symbol)
                    (rep :: Type)
                    (lfd :: Symbol)
@@ -196,24 +192,19 @@ class ArgsRecCheck (ord :: Ordering)
                    (right :: Type)
                    (out :: Type)
                    (p :: Type -> Type -> Type)
-                   | ord fd -> rep lfd lty right out p where
-  gArgsRecCheck :: OProxy ord ->
+                   | bool fd -> rep lfd lty right out p where
+  gArgsRecCheck :: BProxy bool ->
                    SProxy fd ->
                    p out out ->
                    p rep rep
-instance argsRecCheckEQ
+instance argsRecCheckTrue
   :: Strong p
-  => ArgsRecCheck EQ fd (Product (Field lfd lty) right) lfd lty right lty p where
+  => ArgsRecCheck True fd (Product (Field lfd lty) right) lfd lty right lty p where
   gArgsRecCheck _ fd = gProl <<< iField
-instance argsRecCheckLT
+instance argsRecCheckFalse
   :: ( Strong p
      , ArgsRec fd right out p )
-  => ArgsRecCheck LT fd (Product left right) lfd lty right out p where
-  gArgsRecCheck _ fd = gPror <<< gArgsRec fd
-instance argsRecCheckGT
-  :: ( Strong p
-     , ArgsRec fd right out p )
-  => ArgsRecCheck GT fd (Product left right) lfd lty right out p where
+  => ArgsRecCheck False fd (Product left right) lfd lty right out p where
   gArgsRecCheck _ fd = gPror <<< gArgsRec fd
 
 class CtorArg (ct :: Symbol)
