@@ -1,138 +1,71 @@
 module Test.Main where
 
 import Prelude
-import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console (CONSOLE, log)
 import Data.Generic.Rep (class Generic)
-import Data.Generic.Rep.Optic (genericCtor', genericArg', _0, _1)
-import Type.Data.Symbol (SProxy(..))
-import Data.Lens (over, view, preview, Lens', Traversal', to, Iso', Prism')
+import Data.Lens (Iso', Prism', over, preview)
 import Data.Maybe (Maybe(..))
-import Test.Assert (ASSERT, assert)
-import Data.Array (singleton)
+import Generic.Optic (noCtor, genericAbsurd, _Ctor')
+import Test.Assert (assert)
+import Effect (Effect)
+import Effect.Console (log)
+import Type.Data.Symbol (SProxy(..))
 
--- single constructor single argument
-data I = I String
-derive instance genericI :: Generic I _
-derive instance eqI :: Eq I
-_I :: Iso' I String
-_I = genericCtor' (SProxy :: SProxy "I")
+data VoidExample
 
--- multiple constructors, single argument
-data E = A Int | B Boolean
-derive instance genericE :: Generic E _
-derive instance eqE :: Eq E
-_A :: Prism' E Int
-_A = genericCtor' (SProxy :: SProxy "A")
-_B :: Prism' E Boolean
-_B = genericCtor' (SProxy :: SProxy "B")
+derive instance genericVoidExammple :: Generic VoidExample _
 
--- product structure
-data P = P Int String
-derive instance genericP :: Generic P _
-_P = SProxy :: SProxy "P"
-_P_0 :: Lens' P Int
-_P_0 = genericArg' _P _0
-_P_1 :: Lens' P String
-_P_1 = genericArg' _P _1
+voidExample :: Iso' VoidExample Void
+voidExample = noCtor
 
--- record structure
-data R = R { a :: Int, b :: String }
-derive instance genericR :: Generic R _
-_R = SProxy :: SProxy "R"
-_a = SProxy :: SProxy "a"
-_b = SProxy :: SProxy "b"
-_R_a :: Lens' R Int
-_R_a = genericArg' _R _a
-_R_b :: Lens' R String
-_R_b = genericArg' _R _b
+absurdExample :: forall a . VoidExample -> a
+absurdExample = genericAbsurd
 
--- parameterised structure
-data G t = G t t
-derive instance genericG :: Generic (G t) _
-_G = SProxy :: SProxy "G"
-_G_0 :: forall t. Lens' (G t) t
-_G_0 = genericArg' _G _0
-_G_1 :: forall t. Lens' (G t) t
-_G_1 = genericArg' _G _1
+data Example =
+  A Int |
+  B Boolean |
+  C String
 
--- nested structures
-data N = N (G Int) (G String)
-derive instance genericN :: Generic N _
-_N = SProxy :: SProxy "N"
-_N_0 :: Lens' N (G Int)
-_N_0 = genericArg' _N _0
-_N_1 :: Lens' N (G String)
-_N_1 = genericArg' _N _1
+derive instance genericExample :: Generic Example _
 
--- open rows act like regular arguments
-data OR r = OR {a :: Int | r}
-derive instance genericOR :: Generic (OR r) _
-_OR :: forall r. Iso' (OR r) {a :: Int | r}
-_OR = genericCtor' (SProxy :: SProxy "OR")
+derive instance eqExample :: Eq Example
 
--- multiple constructors, multiple arguments
-data ME = MA Int String | MB { a :: Int, b :: String }
-derive instance genericME :: Generic ME _
-_MA = SProxy :: SProxy "MA"
-_MB = SProxy :: SProxy "MB"
-_MA_0 :: Traversal' ME Int
-_MA_0 = genericArg' _MA _0
-_MA_1 :: Traversal' ME String
-_MA_1 = genericArg' _MA _1
-_MB_a :: Traversal' ME Int
-_MB_a = genericArg' _MB _a
-_MB_b :: Traversal' ME String
-_MB_b = genericArg' _MB _b
+_A :: Prism' Example Int
+_A = _Ctor' (SProxy :: SProxy "A")
 
-main :: Eff (console :: CONSOLE, assert :: ASSERT) Unit
+_B :: Prism' Example Boolean
+_B = _Ctor' (SProxy :: SProxy "B")
+
+_C :: Prism' Example String
+_C = _Ctor' (SProxy :: SProxy "C")
+
+main :: Effect Unit
 main = do
-  log "I" *> do
-    assert $ I "Hi!" == over _I (_ <> "!") (I "Hi")
-    assert $ "Hi"    == view _I (I "Hi")
-
-  log "E _A" *> do
+  log "Example _A" *> do
     let f = over _A (10 * _)
-    assert $ A 420  == f (A 42)
+    assert $ A 420 == f (A 42)
     assert $ B true == f (B true)
+    assert $ C "Hi" == f (C "Hi")
     assert $ Just 42 == preview _A (A 42)
     assert $ Nothing == preview _A (B true)
+    assert $ Nothing == preview _A (C "Hi")
 
-  log "E _B" *> do
+  log "Example _B" *> do
     let f = over _B not
-    assert $ A 42    == f (A 42)
+    assert $ A 42 == f (A 42)
     assert $ B false == f (B true)
-    assert $ Nothing   == preview _B (A 42)
+    assert $ C "Hi" == f (C "Hi")
+    assert $ Nothing == preview _B (A 42)
     assert $ Just true == preview _B (B true)
+    assert $ Nothing == preview _A (C "Hi")
 
-  log "P" *> do
-    assert $ 42   == view _P_0 (P 42 "Hi")
-    assert $ "Hi" == view _P_1 (P 42 "Hi")
-
-  log "R" *> do
-    assert $ 42   == view _R_a (R {a: 42, b: "Hi"})
-    assert $ "Hi" == view _R_b (R {a: 42, b: "Hi"})
-
-  log "G" *> do
-    assert $ "A" == view _G_0 (G "A" "B")
-    assert $ "B" == view _G_1 (G "A" "B")
-
-  log "N" *> do
-    let n = N (G 1 2) (G "A" "B")
-    assert $ 1   == view (_N_0 <<< _G_0) n
-    assert $ 2   == view (_N_0 <<< _G_1) n
-    assert $ "A" == view (_N_1 <<< _G_0) n
-    assert $ "B" == view (_N_1 <<< _G_1) n
-
-  log "OR" *> do
-    assert $ 42 == (view _OR (OR {a: 42})).a
-
-  log "ME" *> do
-    let ma = MA 42 "Hi"
-    let mb = MB { a: 42, b: "Hi" }
-    assert $ [42]   == view (_MA_0 <<< to singleton) ma
-    assert $ ["Hi"] == view (_MA_1 <<< to singleton) ma
-    assert $ [42]   == view (_MB_a <<< to singleton) mb
-    assert $ ["Hi"] == view (_MB_b <<< to singleton) mb
+  log "Example _C" *> do
+    let f = over _C (_ <> "!")
+    assert $ A 42 == f (A 42)
+    assert $ B true == f (B true)
+    assert $ C "Hi!" == f (C "Hi")
+    assert $ Nothing == preview _C (A 42)
+    assert $ Nothing == preview _C (B true)
+    assert $ Just "Hi" == preview _C (C "Hi")
 
   log "All done!"
+

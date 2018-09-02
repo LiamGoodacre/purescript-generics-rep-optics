@@ -18,12 +18,12 @@
     "package.json"
   ],
   "dependencies": {
-    "purescript-generics-rep": "^5.2.0",
-    "purescript-profunctor-lenses": "^3.6.0",
-    "purescript-typelevel-prelude": "^2.4.0"
+    "purescript-generics-rep": "^6.0.0",
+    "purescript-profunctor-lenses": "^4.0.0",
+    "purescript-typelevel-prelude": "^3.0.0"
   },
   "devDependencies": {
-    "purescript-assert": "^3.0.0",
-    "purescript-console": "^3.0.0"
+    "purescript-assert": "^4.0.0",
+    "purescript-console": "^4.1.0"
   }
 }
