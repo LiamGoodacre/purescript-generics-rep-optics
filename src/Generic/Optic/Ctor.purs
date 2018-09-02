@@ -34,6 +34,18 @@ genericAbsurd t = absurd (view noCtor t)
 
 -- | Prism into a specific constructor of a data-type.
 -- | Requires the constructor name in a symbol.
+-- |
+-- | Example:
+-- |
+-- | ``` purescript
+-- | data T = A Int | B
+-- |
+-- | _A :: Prism' T Int
+-- | _A = _Ctor' (SProxy :: SProxy "A")
+-- |
+-- | _B :: Prism' T Unit
+-- | _B = _Ctor' (SProxy :: SProxy "B")
+-- | ```
 _Ctor' ::
   forall ctor s a p rep .
   Profunctor p =>
