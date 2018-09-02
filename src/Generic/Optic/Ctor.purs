@@ -2,23 +2,22 @@ module Generic.Optic.Ctor
   ( noCtor
   , genericAbsurd
   , _Ctor'
-  , class GenericCtor
-  , _GenericCtor
-  , class GenericCtorArg
-  , _GenericCtorArg
   ) where
 
-import Prelude ((<<<), Unit, unit, Void, absurd)
+import Prelude
+  ( (<<<), Void, absurd )
 import Data.Generic.Rep
-  ( class Generic, Constructor, Argument, Sum, NoArguments, Product, NoConstructors
-  )
-import Prim.TypeError (class Fail, Text)
-import Data.Profunctor (class Profunctor)
-import Data.Profunctor.Choice (class Choice)
-import Data.Symbol (SProxy)
+  ( class Generic, NoConstructors )
+import Data.Profunctor
+  ( class Profunctor )
+import Data.Symbol
+  ( SProxy )
 import Generic.Optic.Rep
-  ( rep', constructor, sumInl, sumInr, argument, noArguments, noConstructors )
-import Data.Lens (view)
+  ( rep', noConstructors )
+import Data.Lens
+  ( view )
+import Generic.Optic.Ctor.Internal
+  ( class GenericCtor, repCtor' )
 
 -- | Iso from an empty type to Void.
 noCtor ::
@@ -54,62 +53,4 @@ _Ctor' ::
   SProxy ctor ->
   p a a -> p s s
 _Ctor' ctor = rep' <<< repCtor' ctor
-
-repCtor' ::
-  forall ctor s a p .
-  GenericCtor p ctor s a =>
-  SProxy ctor ->
-  p a a -> p s s
-repCtor' ctor = _GenericCtor ctor
-
-class GenericCtor p ctor rep a | ctor rep -> a where
-  _GenericCtor :: SProxy ctor -> p a a -> p rep rep
-
-class GenericCtorArg p arg a | arg -> a where
-  _GenericCtorArg :: p a a -> p arg arg
-
-instance genericCtorSumFound ::
-  ( Choice p
-  , GenericCtorArg p arg a
-  ) =>
-  GenericCtor p ctor (Sum (Constructor ctor arg) r) a where
-    _GenericCtor _ = sumInl <<< constructor <<< _GenericCtorArg
-else
-instance genericCtorSumNext ::
-  ( Choice p
-  , GenericCtor p ctor r a
-  ) =>
-  GenericCtor p ctor (Sum l r) a where
-    _GenericCtor ctor = sumInr <<< _GenericCtor ctor
-else
-instance genericCtorSumLast ::
-  ( Profunctor p
-  , GenericCtorArg p arg a
-  ) =>
-  GenericCtor p ctor (Constructor ctor arg) a where
-    _GenericCtor _ = constructor <<< _GenericCtorArg
-else
-instance genericCtorSumFail ::
-  Fail (Text "TODO") =>
-  GenericCtor p ctor (Constructor other b) a where
-    _GenericCtor _ = loop unit where
-      loop :: forall w . Unit -> w
-      loop u = loop u
-
-instance genericCtorArgMatch ::
-  Profunctor p =>
-  GenericCtorArg p (Argument a) a where
-    _GenericCtorArg = argument
-else
-instance genericCtorArgNone ::
-  Profunctor p =>
-  GenericCtorArg p NoArguments Unit where
-    _GenericCtorArg = noArguments
-else
-instance genericCtorArgFail ::
-  Fail (Text "TODO") =>
-  GenericCtorArg p (Product l r) a where
-    _GenericCtorArg = loop unit where
-      loop :: forall w . Unit -> w
-      loop u = loop u
 
