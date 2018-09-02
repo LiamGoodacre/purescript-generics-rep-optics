@@ -20,8 +20,7 @@ import Generic.Optic.Rep
   ( rep', constructor, sumInl, sumInr, argument, noArguments, noConstructors )
 import Data.Lens (view)
 
--- |
--- Iso from an empty type to Void.
+-- | Iso from an empty type to Void.
 noCtor ::
   forall s p .
   Profunctor p =>
@@ -29,14 +28,12 @@ noCtor ::
   p Void Void -> p s s
 noCtor = rep' <<< noConstructors
 
--- |
--- Absurd for any Generic data-type with no constructors.
+-- | Absurd for any Generic data-type with no constructors.
 genericAbsurd :: forall t a . Generic t NoConstructors => t -> a
 genericAbsurd t = absurd (view noCtor t)
 
--- |
--- Prism into a specific constructor of a data-type.
--- Requires the constructor name in a symbol.
+-- | Prism into a specific constructor of a data-type.
+-- | Requires the constructor name in a symbol.
 _Ctor' ::
   forall ctor s a p rep .
   Profunctor p =>
